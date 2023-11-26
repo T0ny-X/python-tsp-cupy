@@ -1,0 +1,4 @@
+matplotlib==3.8.2
+cupy-cuda12x==12.2.0
+scipy==1.11.4
+torch~=2.1.1+cu121

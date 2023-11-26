@@ -2,12 +2,25 @@
 Python TSP Solver
 =================
 
-``python-tsp`` is a library written in pure Python for solving typical Traveling
-Salesperson Problems (TSP). It can work with symmetric and asymmetric versions.
+``python-tsp-cupy`` is a fork of the GitHub repo ``python-tsp`` that replaces ``numpy`` usage with ``cupy``.
+
+There is no promise that this will significantly improve the performance, if any.
 
 
-Installation
+Requirement
 ============
+As mentioned in `CuPy <https://docs.cupy.dev/en/stable/install.html>`_'s website:
+
+- NVIDIA CUDA GPU with the Compute Capability 3.0 or larger.
+
+- CUDA Toolkit: v10.2 / v11.0 / v11.1 / v11.2 / v11.3 / v11.4 / v11.5 / v11.6 / v11.7 / v11.8 / v12.0 / v12.1 / v12.2 1
+
+- If you have multiple versions of CUDA Toolkit installed, CuPy will automatically choose one of the CUDA installations.
+
+- Python: v3.8 / v3.9 / v3.10 / v3.11
+
+Install `CuPy <https://docs.cupy.dev/en/stable/install.html#installing-cupy>`_ after all the requirements are met.
+
 .. code:: bash
 
   pip install python-tsp
@@ -189,91 +202,17 @@ To help keeping this library relatively up to date and maintainable but not to a
 Release Notes and Changelog
 ===========================
 
-Releases 0.4.X
+Original Releases
 --------------
 
-Release 0.4.0
+Release 0.4.0 and and lower
 ~~~~~~~~~~~~~
 
-- Add Branch and Bound to the list of exact solvers. Thanks @luanleonardo for this contribution.
-
-Python support: Python >= 3.8.1
-
-Releases 0.3.X
---------------
-
-Release 0.3.1
-~~~~~~~~~~~~~
-- Replace heuristic log messages with regular prints. The logs could be compromised with outer level configurations and start to pollute the stdout. Prints are easier to manipulate.
-- Add a ``verbose`` parameter to heuristics to print execution messages in the stdout.
-
-  Thanks for @FrickTobias for pointing this issue and providing a fix.
-
-
-Python support: Python >= 3.7.1
-
-Release 0.3.0
-~~~~~~~~~~~~~
-
-- Add support for street distance matrix calculation via an OSRM server.
-
-Python support: Python >= 3.7.1
-
-
-Releases 0.2.X
---------------
-
-Release 0.2.1
-~~~~~~~~~~~~~
-
-- Improve TSLIB support by using the `TSPLIB95 library <https://pypi.org/project/tsplib95/>`_ .
-
-Python support: Python >= 3.6
-
-Release 0.2.0
-~~~~~~~~~~~~~
-
-- Add distance matrix support for TSPLIB files (symmetric and asymmetric instances);
-- Add new neighborhood types for local search based methods: PS4, PS5, PS6 and 2-opt;
-- Local Search and Simulated Annealing use 2-opt scheme as default;
-- Both local search based methods now respect a maximum processing time if provided;
-- The primitive `print`  to display iterations information is replaced by a proper log.
-
-Python support: Python >= 3.6
-
-Releases 0.1.X
---------------
-
-Release 0.1.2
-~~~~~~~~~~~~~
-
-- Local search and Simulated Annealing random solution now begins at root node
-  0 just like the exact methods.
-
-Python support: Python >= 3.6
-
-Release 0.1.1
-~~~~~~~~~~~~~
-
-- Improve Python versions support.
-
-Python support: Python >= 3.6
-
-
-Release 0.1.0
-~~~~~~~~~~~~~
-
-- Initial version. Support for the following solvers:
-
-  - Exact (Brute force and Dynamic Programming);
-  - Heuristics (Local Search and Simulated Annealing).
-
-- The local search-based algorithms can be run with neighborhoods PS1, PS2 and PS3.
-
-Python support: Python >= 3.8
+Refer to the `original repository <https://github.com/fillipe-gsm/python-tsp>`_ for the change log.
 
 
 Contributors
 ============
+Original Repository
 
 - @FrickTobias
