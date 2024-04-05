@@ -9,7 +9,7 @@ from solve_tsp import *
 from tqdm import tqdm
 
 
-def compare_algo(num_of_nodes):
+def compare_cost(num_of_nodes):
     cities = cp.random.rand(num_of_nodes, 2)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         tour1_future = executor.submit(farthest_insertion, cities)
@@ -19,6 +19,39 @@ def compare_algo(num_of_nodes):
     fih_distance = calculate_tour_distance(tour1, cities)
     dp_distance = calculate_tour_distance(tour2, cities)
     return math.isclose(fih_distance, dp_distance, rel_tol=1e-10)
+
+
+def compare_path(num_of_nodes, visualize = False):
+    cities = cp.random.rand(num_of_nodes, 2)
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        tour1_future = executor.submit(farthest_insertion, cities)
+        tour2_future = executor.submit(tsp_dp, cities)
+        path1 = tour1_future.result()
+        path2 = tour2_future.result()
+    if not path1 or not path2:
+        return 0
+    if visualize:
+        visualize_tour(cp.asnumpy(cities).tolist(), path1, "Path 1")
+        visualize_tour(cp.asnumpy(cities).tolist(), path2, "Path 2")
+        # Set to store unique nodes from both paths
+    print(path1)
+    print(path2)
+
+    if len(path1) != len(path2):
+        return 0
+
+    path1_loop = path1+[path1[0]]
+    path2_loop = path2+[path2[0]]
+    correct_segments_clock = len(cities)
+    correct_segments_c_clock = len(cities)
+    for i in range(correct_segments_clock):
+        segment_A = path1_loop[i]
+        segment_B = path1_loop[i+1]
+        if path2_loop.index(segment_A)+1 != path2_loop.index(segment_B):
+            correct_segments_clock -= 1
+        if path2_loop.index(segment_B)+1 != path2_loop.index(segment_A):
+            correct_segments_c_clock -= 1
+    return max(correct_segments_clock, correct_segments_c_clock)
 
 
 def visualize_tour(cities, tour, title):
@@ -72,7 +105,7 @@ def log_to_csv(results, filename="result-{}.csv".format(datetime.datetime.now().
 
 
 def compare_and_log(num_of_nodes, j):
-    res = compare_algo(num_of_nodes)
+    res = compare_cost(num_of_nodes)
     return (num_of_nodes, res)
 
 
@@ -92,9 +125,10 @@ def log_and_compare(num_of_nodes):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    eachGroup = 50
-    startingGroup = 16
-    endingGroup = 20
+    print(compare_path(10, visualize=True))
+    eachGroup = 10
+    startingGroup = 1
+    endingGroup = 1
     for num_of_nodes in range(startingGroup, endingGroup + 1):
         print("Testing group {}.".format(num_of_nodes))
         log_and_compare(num_of_nodes)
