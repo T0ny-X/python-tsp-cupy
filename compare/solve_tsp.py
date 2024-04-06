@@ -72,7 +72,7 @@ def solve_tsp_dynamic_programming(
     maxsize: Optional[int] = None,
 ) -> Tuple[List, float]:
     """
-    Credit to Fillipe Goulart with
+    Credit to Fillipe Goulart
     """
     # Get initial set {1, 2, ..., tsp_size} as a frozenset because @lru_cache
     # requires a hashable type

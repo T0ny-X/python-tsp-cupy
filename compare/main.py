@@ -1,59 +1,82 @@
 # This is a sample Python script.
-import threading
-import matplotlib.pyplot as plt
-import math
+import concurrent.futures
 import csv
 import datetime
-import concurrent.futures
-from solve_tsp import *
+import math
+import threading
+
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+from solve_tsp import *
 
-def compare_cost(num_of_nodes):
-    cities = cp.random.rand(num_of_nodes, 2)
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        tour1_future = executor.submit(farthest_insertion, cities)
-        tour2_future = executor.submit(tsp_dp, cities)
-        tour1 = tour1_future.result()
-        tour2 = tour2_future.result()
+
+# Compare_only functions
+def compare_cost(tour1, tour2, cities):
     fih_distance = calculate_tour_distance(tour1, cities)
     dp_distance = calculate_tour_distance(tour2, cities)
     return math.isclose(fih_distance, dp_distance, rel_tol=1e-10)
 
 
-def compare_path(num_of_nodes, visualize = False):
+def compare_path(path1, path2, cities):
+    if len(path1) != len(path2):
+        return 0
+    if path1 == path2:
+        return len(cities)
+    path1_loop = path1 + [path1[0]]
+
+    correct_segments_clock = len(cities)
+    correct_segments_c_clock = len(cities)
+    for i in range(len(cities)):
+        segment_A = path1_loop[i]
+        segment_B = path1_loop[i + 1]
+        if path2.index(segment_A) + 1 != path2.index(segment_B):
+            correct_segments_clock -= 1
+        if path2.index(segment_B) + 1 != path2.index(segment_A):
+            correct_segments_c_clock -= 1
+    res = max(correct_segments_clock, correct_segments_c_clock)
+    if res == len(cities) - 1:
+        return len(cities)  # Due to property of inversion, only miss one is impossible in a loop
+    return res
+
+
+# Algorithm comparison functions
+def compare_algo_cost(num_of_nodes):
     cities = cp.random.rand(num_of_nodes, 2)
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        tour1_future = executor.submit(farthest_insertion, cities)
-        tour2_future = executor.submit(tsp_dp, cities)
-        path1 = tour1_future.result()
-        path2 = tour2_future.result()
+    tour1 = farthest_insertion(cities)
+    tour2 = tsp_dp(cities)
+    return compare_cost(tour1, tour2, cities)
+
+
+def compare_algo_path(num_of_nodes):
+    cities = cp.random.rand(num_of_nodes, 2)
+    path1 = farthest_insertion(cities)
+    path2 = tsp_dp(cities)
     if not path1 or not path2:
         return 0
-    if visualize:
-        visualize_tour(cp.asnumpy(cities).tolist(), path1, "Path 1")
-        visualize_tour(cp.asnumpy(cities).tolist(), path2, "Path 2")
         # Set to store unique nodes from both paths
     print(path1)
     print(path2)
-
-    if len(path1) != len(path2):
-        return 0
-
-    path1_loop = path1+[path1[0]]
-    path2_loop = path2+[path2[0]]
-    correct_segments_clock = len(cities)
-    correct_segments_c_clock = len(cities)
-    for i in range(correct_segments_clock):
-        segment_A = path1_loop[i]
-        segment_B = path1_loop[i+1]
-        if path2_loop.index(segment_A)+1 != path2_loop.index(segment_B):
-            correct_segments_clock -= 1
-        if path2_loop.index(segment_B)+1 != path2_loop.index(segment_A):
-            correct_segments_c_clock -= 1
-    return max(correct_segments_clock, correct_segments_c_clock)
+    return compare_path(path1, path2, cities)
 
 
+def compare_algo_visual(num_of_nodes):
+    # Generate sample city coordinates
+    cities = cp.random.rand(num_of_nodes, 2)
+    # Run both
+    fih = farthest_insertion(cities)
+    dp = tsp_dp(cities)
+    # Visualize the tour
+    cities = cities.get()
+    visualize_tour(cities, fih, 'Farthest Insertion')
+    visualize_tour(cities, dp, 'Branch and Cut')
+    print("The FHI tour is:", fih)
+    print("The dp is:", dp)
+    print("The distance of the FHI tour is:", calculate_tour_distance(fih, cities))
+    print("The distance of the optimal tour is:", calculate_tour_distance(dp, cities))
+
+
+# Utility functions
 def visualize_tour(cities, tour, title):
     # Convert tour to a Python list
     tour = cp.asnumpy(tour).tolist()
@@ -77,31 +100,44 @@ def visualize_tour(cities, tour, title):
     plt.show()
 
 
-def compare_algo_visual(num_of_nodes):
-    # Generate sample city coordinates
-    cities = cp.random.rand(num_of_nodes, 2)
-    # Run both
-    fih = farthest_insertion(cities)
-    dp = tsp_dp(cities)
-    # Visualize the tour
-    cities = cities.get()
-    visualize_tour(cities, fih, 'Farthest Insertion')
-    visualize_tour(cities, dp, 'Branch and Cut')
-    print("The FHI tour is:", fih)
-    print("The dp is:", dp)
-    print("The distance of the FHI tour is:", calculate_tour_distance(fih, cities))
-    print("The distance of the optimal tour is:", calculate_tour_distance(dp, cities))
-
-
-# Create a lock
-lock = threading.Lock()
-
-
 def log_to_csv(results, filename="result-{}.csv".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))):
     with lock:
         with open(filename, "a", newline='') as file:
             writer = csv.writer(file)
             writer.writerows(results)
+
+
+# Main compare
+def compare_algo(num_of_nodes, header=True, cost_diff=True, segment_similarity=True, visualization=False):
+    cities = cp.random.rand(num_of_nodes, 2)
+    tour1 = farthest_insertion(cities)
+    tour2 = tsp_dp(cities)
+
+    if segment_similarity:
+        segments = compare_path(tour1, tour2, cities)
+    else:
+        segments = 0
+
+    if cost_diff and segments == len(cities):
+        cost = compare_cost(tour1, tour2, cities)
+    else:
+        cost = 0
+
+    if visualization:
+        visualize_tour(cities, tour1, 'Farthest Insertion')
+        visualize_tour(cities, tour2, 'Dynamic Programming')
+        if header:
+            print("Number of nodes:", num_of_nodes)
+        if cost_diff:
+            print("Cost difference:", cost)
+        if segment_similarity:
+            print("Same segments:", segments)
+
+    return [num_of_nodes, cost, segments]
+
+
+# Batch Process functions
+lock = threading.Lock()
 
 
 def compare_and_log(num_of_nodes, j):
@@ -116,7 +152,7 @@ def log_and_compare(num_of_nodes):
         for future in tqdm(concurrent.futures.as_completed(futures), total=eachGroup, desc="Progress"):
             results.append(future.result())
     try:
-        log_to_csv(results, '../../TSP-FIH/mainRes.csv')
+        log_to_csv(results, 'mainRes.csv')
     except Exception as e:
         print(f"An error occurred: {e}")
         print("Alternative location saved due to error")
@@ -125,10 +161,13 @@ def log_and_compare(num_of_nodes):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print(compare_path(10, visualize=True))
+    print(compare_path([1, 2, 3, 4], [4, 3, 2, 1], [1, 2, 3, 4]))
     eachGroup = 10
+    """
     startingGroup = 1
-    endingGroup = 1
+    endingGroup = 3
     for num_of_nodes in range(startingGroup, endingGroup + 1):
         print("Testing group {}.".format(num_of_nodes))
         log_and_compare(num_of_nodes)
+    
+    """
